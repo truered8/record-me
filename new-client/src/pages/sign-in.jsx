@@ -12,9 +12,29 @@ import {
 import { SimpleFooter } from "@/widgets/layout";
 import { useState } from "react";
 
+async function loginUser(credentials) {
+  return fetch("http://localhost:8080/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(credentials),
+  }).then((data) => data.json());
+}
+
 export function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const token = await loginUser({
+      email,
+      password,
+    });
+    console.log(token);
+    localStorage.setItem("token", token["auth_token"]);
+  };
 
   return (
     <>
@@ -35,16 +55,23 @@ export function SignIn() {
             </Typography>
           </CardHeader>
           <CardBody className="flex flex-col gap-4">
-            <Input variant="standard" type="email" label="Email" size="lg" />
+            <Input
+              variant="standard"
+              type="email"
+              label="Email"
+              size="lg"
+              onChange={(e) => setEmail(e.target.value)}
+            />
             <Input
               variant="standard"
               type="password"
               label="Password"
               size="lg"
+              onChange={(e) => setPassword(e.target.value)}
             />
           </CardBody>
           <CardFooter className="pt-0">
-            <Button variant="gradient" fullWidth>
+            <Button variant="gradient" fullWidth onClick={handleSubmit}>
               Sign In
             </Button>
             <Typography variant="small" className="mt-6 flex justify-center">

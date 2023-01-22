@@ -2,6 +2,7 @@ from typing import Callable
 from uuid import uuid4 as uuid
 
 from flask import Flask, request, jsonify, make_response
+from flask_cors import CORS, cross_origin
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
@@ -14,6 +15,7 @@ from models import *
 
 Session = sessionmaker()
 app = Flask(__name__)
+cors = CORS(app)
 app.config.from_object('config.BaseConfig')
 auth = HTTPTokenAuth(scheme='Bearer')
 
@@ -47,6 +49,7 @@ def get_endpoint_loader(database: CockroachService) -> Callable[[Engine], None]:
             return user
 
         @app.post('/register')
+        @cross_origin()
         def register():
             session = Session()
 
@@ -98,6 +101,7 @@ def get_endpoint_loader(database: CockroachService) -> Callable[[Engine], None]:
                 return jsonify(response_object), 401
 
         @app.post('/login')
+        @cross_origin()
         def login():
             session = Session()
 
@@ -137,6 +141,7 @@ def get_endpoint_loader(database: CockroachService) -> Callable[[Engine], None]:
                 return jsonify(response_object), 500
 
         @app.get('/group')
+        @cross_origin()
         def get_group():
             session = Session()
             groups = database.get_groups(session)
@@ -149,6 +154,7 @@ def get_endpoint_loader(database: CockroachService) -> Callable[[Engine], None]:
             return jsonify(response_object), 200
 
         @app.post('/group')
+        @cross_origin()
         @auth.login_required
         def post_group():
             session = Session()
