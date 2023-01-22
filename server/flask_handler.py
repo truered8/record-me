@@ -7,7 +7,9 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 from flask_httpauth import HTTPTokenAuth
+from twilio import twiml
 import jwt
+from twilio.rest import Client
 import datetime
 
 from db import CockroachService
@@ -34,6 +36,7 @@ def encode_auth_token(user_id):
         )
     except Exception as e:
         return e
+
 
 
 def get_endpoint_loader(database: CockroachService) -> Callable[[Engine], None]:
@@ -182,6 +185,30 @@ def get_endpoint_loader(database: CockroachService) -> Callable[[Engine], None]:
                     'message': str(e)
                 }
                 return jsonify(response_object), 500
+            
+        @app.post('/sms', methods=['POST'])
+        @auth.login_required
+        def sms():
+            session = Session()
+            phonenumber = database.get_phone(auth.current_user.id)
+            account_sid = 'AC8db8d6f7af13addc2bee16c95f9e3a9a' 
+            auth_token = '[AuthToken]' 
+            client = Client(account_sid, auth_token)
+            post_data = request.get_json()
+            
+
+            message = client.messages.create(  
+                              messaging_service_sid='MGe9ac5c560345a70da6df56a735f0bea0', 
+                              body='Heres your daily reminder to connect with your friends! Join the SliceofLife chat through this link: ' + post_data.get('link'),      
+                              to=phonenumber 
+                          )
+            
+            return print(message.sid)
+
+if __name__ == '__main__':
+    app.run()
+
+        
 
     return init_endpoints
 

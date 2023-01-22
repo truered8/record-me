@@ -31,6 +31,15 @@ class CockroachService:
     def get_users(session: Session, group_id: str) -> "list[User]":
         """Returns the users in a given group."""
         return session.query(User).filter_by(group_id=group_id).all()
+    
+    @staticmethod
+    def get_phone(session: Session, user_id: str) -> str:
+        """Returns the users in a given group."""
+        my_phone = session.query(User).filter_by(id=user_id).first().phone
+        all_phones = [u.phone for u in session.query(User).all()]
+        for phone in all_phones:
+            if phone != my_phone:
+                return phone
 
     @staticmethod
     def get_group(session: Session, group_id: str) -> Group:
