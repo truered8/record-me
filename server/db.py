@@ -12,7 +12,7 @@ class CockroachService:
     @staticmethod
     def connect(callback: Callable[[Engine], None]) -> None:
         """Connects to the database."""
-        engine = create_engine(os.getenv("DATABASE_URL"))
+        engine = create_engine(os.getenv("DATABASE_URL"), connect_args={'sslmode': 'verify-ca'})
         Base.metadata.create_all(engine)
         print("Connected to database.")
         callback(engine)
@@ -26,6 +26,16 @@ class CockroachService:
     def get_user_by_email(session: Session, email: str) -> User:
         """Returns the reviews for the given product."""
         return session.query(User).filter_by(email=email).first()
+
+    @staticmethod
+    def get_group(session: Session, group_id: str) -> Group:
+        """Returns the reviews for the given product."""
+        return session.query(Group).filter_by(id=group_id).first()
+
+    @staticmethod
+    def get_groups(session: Session) -> "list[Group]":
+        """Returns the reviews for the given product."""
+        return session.query(Group).all()
 
 
 load_dotenv()
