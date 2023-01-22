@@ -10,7 +10,7 @@ RUN pip install -r requirements.txt
 
 # 4
 ENV PORT 8080
-RUN curl --create-dirs -o $HOME/.postgresql/root.crt -O https://cockroachlabs.cloud/clusters/14a38e6a-82e2-4308-86c5-8124ef6268e9/cert
+RUN curl --create-dirs -o $HOME/.postgresql/root.crt -O https://cockroachlabs.cloud/clusters/bff5a441-cb47-4d74-9fc0-b20583a074ce/cert
 
 # 5
-CMD exec gunicorn --bind :$PORT 'flask_handler:run_app()'
+CMD exec gunicorn --bind :$PORT 'flask_handler:load_app()'

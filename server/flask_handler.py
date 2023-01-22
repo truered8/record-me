@@ -1,146 +1,146 @@
 from typing import Callable
 from uuid import uuid4 as uuid
-from flask import Flask, request, jsonify
+
+from flask import Flask, request, jsonify, make_response
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
-import os
+from flask_httpauth import HTTPTokenAuth
+import jwt
+import datetime
 
 from db import CockroachService
 from models import *
-from prediction import CohereService
 
 Session = sessionmaker()
 app = Flask(__name__)
+app.config.from_object('config.BaseConfig')
+auth = HTTPTokenAuth(scheme='Bearer')
 
 
-def get_endpoint_loader(database: CockroachService, predictor: CohereService) -> Callable[[Engine], None]:
+def encode_auth_token(user_id):
+    try:
+        payload = {
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, minutes=60),
+            'iat': datetime.datetime.utcnow(),
+            'sub': str(user_id)
+        }
+        return jwt.encode(
+            payload,
+            app.config.get('SECRET_KEY'),
+            algorithm='HS256'
+        )
+    except Exception as e:
+        return e
+
+
+def get_endpoint_loader(database: CockroachService) -> Callable[[Engine], None]:
     def init_endpoints(engine: Engine):
         Session.configure(bind=engine)
 
-        @app.post("/review/")
-        def add_review():
-            new_review = Review(
-                id=uuid(),
-                tester_id=request.json.get("tester_id"),
-                product_id=request.json.get("product_id"),
-                rating=request.json.get("rating"),
-                feedback=request.json.get("feedback")
-            )
+        @auth.verify_token
+        def verify_token(token):
+            data = jwt.decode(token, app.config.get('SECRET_KEY'), algorithms='HS256')
+            print(data)
             session = Session()
-            response = {}
-            try:
-                label = predictor.get_categories(new_review.feedback)
-                response.update({"label": label})
-                product = database.get_product(session, str(new_review.product_id))
-                if label in product.issues:
-                    product.issues[label] += 1
-                else:
-                    product.issues[label] = 1
+            user = database.get_user(session, data["sub"])
+            return user
 
-                database.update_product(session, product)
+        @app.post('/register')
+        def register():
+            session = Session()
+
+            # get the post data
+            post_data = request.get_json()
+            # check if user already exists
+            user = database.get_user_by_email(session, post_data.get('email'))
+            if user:
+                response_object = {
+                    'status': 'fail',
+                    'message': 'User already exists. Please Log in.',
+                }
+                return jsonify(response_object), 202
+
+            try:
+                user = User(
+                    id=uuid(),
+                    email=post_data.get('email'),
+                    password=post_data.get('password'),
+                    phone=post_data.get('phone'),
+                    group_id=post_data.get('group_id')
+                )
+                print(user)
+
+                # insert the user
+                session.add(user)
                 session.commit()
-            except:
-                print("Couldn't categorize review.")
+                # generate the auth token
+                auth_token = encode_auth_token(user.id)
+                response_object = {
+                    'status': 'success',
+                    'message': 'Successfully registered.',
+                    'auth_token': auth_token
+                }
+                return jsonify(response_object), 201
+            except Exception as e:
+                print(e)
+                response_object = {
+                    'status': 'fail',
+                    'message': 'Some error occurred. Please try again.'
+                }
+                return jsonify(response_object), 401
 
-            try:
-                database.add_review(session, new_review)
-                session.commit()
-                response.update({"review_id": new_review.id})
-                return jsonify(response)
-            except:
-                return "Couldn't add review in database."
 
-        @app.get("/review/")
-        def get_reviews():
+        @app.post('/login')
+        def login():
             session = Session()
-            try:
-                res = database.get_reviews(session, request.args.get("product_id"))
-                return [{"id": r.id, "rating": r.rating, "feedback": r.feedback} for r in res]
-            except:
-                return "Couldn't read reviews table."
 
-        @app.post("/product/")
-        def add_product():
-            new_product = Product(
-                id=uuid(),
-                company_id=request.json.get("product_id"),
-                name=request.json.get("name"),
-                description=request.json.get("description"),
-                hourly=request.json.get("hourly"),
-                target_age=request.json.get("target_age"),
-                target_industry=request.json.get("target_industry"),
-                issues={}
-            )
-            session = Session()
+            # get the post data
+            post_data = request.get_json()
             try:
-                database.add_product(session, new_product)
-                session.commit()
-                return {"product_id": new_product.id}
-            except:
-                return "Couldn't add product in database."
+                # fetch the user data
+                user = database.get_user_by_email(session, post_data.get('email'))
+                if not user:
+                    response_object = {
+                        'status': 'fail',
+                        'message': 'User does not exist.'
+                    }
+                    return jsonify(response_object), 404
 
-        @app.get("/product/")
-        def get_products():
-            session = Session()
-            try:
-                res = database.get_products(session, request.args.get("company_id"))
-                return [{"id": r.id, "name": r.name, "issues": r.issues} for r in res]
-            except:
-                return "Couldn't read product table."
+                if user.password != post_data.get('password'):
+                    response_object = {
+                        'status': 'fail',
+                        'message': 'Wrong password.'
+                    }
+                    return jsonify(response_object), 401
 
-        @app.get("/matches/")
-        def get_matches():
-            session = Session()
-            try:
-                res = database.get_matched_products(session, request.args.get("tester_id"))
-                return [{"id": r.id, "name": r.name, "issues": r.issues} for r in res]
-            except:
-                return "Couldn't read product table."
+                auth_token = encode_auth_token(user.id)
+                response_object = {
+                    'status': 'success',
+                    'message': 'Successfully logged in.',
+                    'auth_token': auth_token
+                }
+                return jsonify(response_object), 200
 
-        @app.post("/tester/")
-        def add_tester():
-            new_tester = Tester(
-                id=uuid(),
-                username=request.json.get("username"),
-                industry=request.json.get("industry"),
-                age=request.json.get("age")
-            )
-            session = Session()
-            try:
-                database.add_tester(session, new_tester)
-                session.commit()
-                return {"tester_id": new_tester.id}
-            except:
-                return "Couldn't add tester in database."
-
-        @app.post("/company/")
-        def add_company():
-            new_company = Company(
-                id=uuid(),
-                name=request.json.get("name"),
-                email=request.json.get("email")
-            )
-            session = Session()
-            try:
-                database.add_company(session, new_company)
-                session.commit()
-                return {"company_id": new_company.id}
-            except:
-                return "Couldn't add company in database."
+            except Exception as e:
+                print(e)
+                response_object = {
+                    'status': 'fail',
+                    'message': 'Try again'
+                }
+                return jsonify(response_object), 500
 
     return init_endpoints
 
 
-def run_app():
+def load_app():
     database = CockroachService()
-    predictor = CohereService()
-    database.connect(get_endpoint_loader(database, predictor))
+    database.connect(get_endpoint_loader(database))
 
     load_dotenv()
     return app
 
 
 if __name__ == "__main__":
-    run_app()
-
+    app = load_app()
+    app.run()

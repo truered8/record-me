@@ -12,6 +12,7 @@ class User(Base):
 
     name = Column(String(200))
     email = Column(String(200))
+    password = Column(String(200))
     phone = Column(String(12))
     group_id = Column(UUID(as_uuid=True), primary_key=False)
 
