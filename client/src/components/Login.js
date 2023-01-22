@@ -5,21 +5,27 @@ import Suggestions from "./suggestions";
 import { RecordButton } from "./styles";
 import useSound from "use-sound";
 
-
 function Login() {
-
   return (
     <div>
       <Typography variant="title">Ghostwriter</Typography>
       <div style={{ marginTop: "1rem" }}>
-        <Typography variant="subtitle">
-          Rapping is a form of poetry, one to ease the mind and provide clarity.
-          We are hacking the mental health space by giving literal poetic
-          justice to users around the world.
-        </Typography>
-      </div> 
+        <form className="form" onSubmit={this.handleSubmit}>
+          <div className="input-group">
+            <label htmlFor="email">Email</label>
+            <input type="email" name="email" placeholder="nome@email.com.br" />
+          </div>
+          <div className="input-group">
+            <label htmlFor="password">Senha</label>
+            <input type="password" name="password" />
+          </div>
+          <button className="primary">ENTRAR</button>
+        </form>
+        <button className="secondary" onClick={this.handleClick}>
+          Criar uma nova conta
+        </button>
       </div>
-    
+    </div>
   );
 }
 

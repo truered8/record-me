@@ -26,6 +26,11 @@ class CockroachService:
     def get_user_by_email(session: Session, email: str) -> User:
         """Returns the reviews for the given product."""
         return session.query(User).filter_by(email=email).first()
+    
+    @staticmethod
+    def get_users(session: Session, group_id: str) -> "list[User]":
+        """Returns the users in a given group."""
+        return session.query(User).filter_by(group_id=group_id).all()
 
     @staticmethod
     def get_group(session: Session, group_id: str) -> Group:
