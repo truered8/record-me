@@ -186,31 +186,28 @@ def get_endpoint_loader(database: CockroachService) -> Callable[[Engine], None]:
                 }
                 return jsonify(response_object), 500
             
-        @app.post('/sms', methods=['POST'])
+        @app.post('/sms')
         @auth.login_required
         def sms():
             session = Session()
-            phonenumber = database.get_phone(auth.current_user.id)
+            phonenumber = database.get_phone(session, auth.current_user().id)
             account_sid = 'AC8db8d6f7af13addc2bee16c95f9e3a9a' 
-            auth_token = '[AuthToken]' 
+            auth_token = 'b333e40587d708bb2f4c2ff67f0a5237' 
             client = Client(account_sid, auth_token)
             post_data = request.get_json()
-            
 
             message = client.messages.create(  
                               messaging_service_sid='MGe9ac5c560345a70da6df56a735f0bea0', 
                               body='Heres your daily reminder to connect with your friends! Join the SliceofLife chat through this link: ' + post_data.get('link'),      
                               to=phonenumber 
                           )
-            
-            return print(message.sid)
+            return jsonify({"message": "success"})
+        
+    return init_endpoints
 
 if __name__ == '__main__':
     app.run()
-
-        
-
-    return init_endpoints
+    app.init_endpoints()
 
 
 def load_app():
@@ -224,3 +221,4 @@ def load_app():
 if __name__ == "__main__":
     app = load_app()
     app.run()
+

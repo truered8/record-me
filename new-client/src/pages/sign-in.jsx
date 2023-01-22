@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Card,
   CardHeader,
@@ -27,11 +27,12 @@ async function loginUser(credentials) {
   }).then((data) => data.json());
 }
 
-async function sentText(link, token) {
-  return fetch("http://localhost:8080/login", {
+async function sendText(link, token) {
+  return fetch("http://localhost:8080/sms", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token["auth_token"]}`,
     },
     body: JSON.stringify({ link }),
   }).then((data) => data.json());
@@ -40,6 +41,8 @@ async function sentText(link, token) {
 export function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const navigate = useNavigate();
 
   const huddleClient = getHuddleClient(
     "825b202a60882076b7d4c96c79f73927325db98c58a74659570680fbe100ef37"
@@ -51,9 +54,10 @@ export function SignIn() {
       email,
       password,
     });
-    console.log(token);
+    console.log(token["auth_token"]);
     localStorage.setItem("token", token["auth_token"]);
-    fetch;
+    sendText("https://iframe.huddle01.com/rfc-kczg-hux", token);
+    navigate("/meet");
   };
 
   return (

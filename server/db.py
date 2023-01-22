@@ -34,7 +34,7 @@ class CockroachService:
     
     @staticmethod
     def get_phone(session: Session, user_id: str) -> str:
-        """Returns the users in a given group."""
+        """Returns the phone number of a random user in the database."""
         my_phone = session.query(User).filter_by(id=user_id).first().phone
         all_phones = [u.phone for u in session.query(User).all()]
         for phone in all_phones:
