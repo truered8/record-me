@@ -1,6 +1,5 @@
 // importing components from react-router-dom package
 import { Route, Routes } from "react-router-dom";
-import Home from "./Home.jsx";
 import Login from "./components/Login.js";
 import Call from "./components/Call.js";
 import Record from "./components/Record.js";

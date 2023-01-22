@@ -1,6 +1,5 @@
 import React, {useMemo, useState} from "react";
 import { AppWrapper, getDesignTokens } from "./components/styles";
-import Home from "./components/Call";
 import {createTheme, CssBaseline, ThemeProvider, useMediaQuery} from "@mui/material";
 import Header from "./components/header";
 import IconButton from "@mui/material/IconButton";
