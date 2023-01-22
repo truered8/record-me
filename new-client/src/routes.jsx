@@ -6,6 +6,7 @@ import {
   UserPlusIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/solid";
+import Meet from "./pages/meet";
 
 export const routes = [
   {
@@ -31,6 +32,12 @@ export const routes = [
     name: "Sign Up",
     path: "/sign-up",
     element: <SignUp />,
+  },
+  {
+    icon: UserPlusIcon,
+    name: "Meet",
+    path: "/meet",
+    element: <Meet />,
   },
   {
     icon: DocumentTextIcon,

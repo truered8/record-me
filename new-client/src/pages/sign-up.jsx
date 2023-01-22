@@ -10,8 +10,38 @@ import {
   Typography,
 } from "@material-tailwind/react";
 import { SimpleFooter } from "@/widgets/layout";
+import { useState } from "react";
+
+async function registerUser(credentials) {
+  return fetch("http://localhost:8080/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(credentials),
+  }).then((data) => data.json());
+}
 
 export function SignUp() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [phone, setPhone] = useState("");
+  const [group_id, setGroupId] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const token = await registerUser({
+      username,
+      phone,
+      email,
+      password,
+      group_id,
+    });
+    console.log(token);
+    localStorage.setItem("token", token["auth_token"]);
+  };
+
   return (
     <>
       <img
@@ -31,20 +61,41 @@ export function SignUp() {
             </Typography>
           </CardHeader>
           <CardBody className="flex flex-col gap-4">
-            <Input variant="standard" label="Name" size="lg" />
-            <Input variant="standard" type="email" label="Email" size="lg" />
+            <Input
+              variant="standard"
+              label="Username"
+              size="lg"
+              onChange={(e) => setUsername(e.target.value)}
+            />
+            <Input
+              variant="standard"
+              label="Phone Number"
+              size="lg"
+              onChange={(e) => setPhone(e.target.value)}
+            />
+            <Input
+              variant="standard"
+              type="email"
+              label="Email"
+              size="lg"
+              onChange={(e) => setEmail(e.target.value)}
+            />
             <Input
               variant="standard"
               type="password"
               label="Password"
               size="lg"
+              onChange={(e) => setPassword(e.target.value)}
             />
-            <div className="-ml-2.5">
-              <Checkbox label="I agree the Terms and Conditions" />
-            </div>
+            <Input
+              variant="standard"
+              label="Group ID"
+              size="lg"
+              onChange={(e) => setUsername(e.target.value)}
+            />
           </CardBody>
           <CardFooter className="pt-0">
-            <Button variant="gradient" fullWidth>
+            <Button variant="gradient" fullWidth onClick={handleSubmit}>
               Sign Up
             </Button>
             <Typography variant="small" className="mt-6 flex justify-center">

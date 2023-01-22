@@ -10,7 +10,10 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.0.12",
+    "@huddle01/huddle01-client": "^0.0.10",
+    "@huddle01/huddle01-iframe": "^0.0.8",
     "@material-tailwind/react": "^1.2.4",
+    "huddle01-client": "^1.1.20",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

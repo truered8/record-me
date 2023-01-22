@@ -10,7 +10,12 @@ import {
   Typography,
 } from "@material-tailwind/react";
 import { SimpleFooter } from "@/widgets/layout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import HuddleClient, { emitter } from "huddle01-client";
+import {
+  HuddleClientProvider,
+  getHuddleClient,
+} from "@huddle01/huddle01-client";
 
 async function loginUser(credentials) {
   return fetch("http://localhost:8080/login", {
@@ -22,9 +27,23 @@ async function loginUser(credentials) {
   }).then((data) => data.json());
 }
 
+async function sentText(link, token) {
+  return fetch("http://localhost:8080/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ link }),
+  }).then((data) => data.json());
+}
+
 export function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const huddleClient = getHuddleClient(
+    "825b202a60882076b7d4c96c79f73927325db98c58a74659570680fbe100ef37"
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,10 +53,11 @@ export function SignIn() {
     });
     console.log(token);
     localStorage.setItem("token", token["auth_token"]);
+    fetch;
   };
 
   return (
-    <>
+    <HuddleClientProvider client={huddleClient}>
       <img
         src="/img/background-2.jpg"
         className="absolute inset-0 z-0 h-full w-full object-cover"
@@ -93,7 +113,7 @@ export function SignIn() {
       <div className="container absolute bottom-6 left-2/4 z-10 mx-auto -translate-x-2/4 text-white">
         <SimpleFooter />
       </div>
-    </>
+    </HuddleClientProvider>
   );
 }
 
