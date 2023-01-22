@@ -41,8 +41,8 @@ def get_endpoint_loader(database: CockroachService) -> Callable[[Engine], None]:
         @auth.verify_token
         def verify_token(token):
             data = jwt.decode(token, app.config.get('SECRET_KEY'), algorithms='HS256')
-            print(data)
             session = Session()
+
             user = database.get_user(session, data["sub"])
             return user
 
@@ -62,6 +62,14 @@ def get_endpoint_loader(database: CockroachService) -> Callable[[Engine], None]:
                 return jsonify(response_object), 202
 
             try:
+                group = database.get_group(session, post_data.get('group_id'))
+                if not group:
+                    response_object = {
+                        'status': 'fail',
+                        'message': f'Group with id {post_data.get("group_id")} does not exist.'
+                    }
+                    return jsonify(response_object), 401
+
                 user = User(
                     id=uuid(),
                     email=post_data.get('email'),
@@ -69,11 +77,9 @@ def get_endpoint_loader(database: CockroachService) -> Callable[[Engine], None]:
                     phone=post_data.get('phone'),
                     group_id=post_data.get('group_id')
                 )
-                print(user)
-
-                # insert the user
                 session.add(user)
                 session.commit()
+
                 # generate the auth token
                 auth_token = encode_auth_token(user.id)
                 response_object = {
@@ -82,6 +88,7 @@ def get_endpoint_loader(database: CockroachService) -> Callable[[Engine], None]:
                     'auth_token': auth_token
                 }
                 return jsonify(response_object), 201
+
             except Exception as e:
                 print(e)
                 response_object = {
@@ -89,7 +96,6 @@ def get_endpoint_loader(database: CockroachService) -> Callable[[Engine], None]:
                     'message': 'Some error occurred. Please try again.'
                 }
                 return jsonify(response_object), 401
-
 
         @app.post('/login')
         def login():
@@ -126,7 +132,48 @@ def get_endpoint_loader(database: CockroachService) -> Callable[[Engine], None]:
                 print(e)
                 response_object = {
                     'status': 'fail',
-                    'message': 'Try again'
+                    'message': str(e)
+                }
+                return jsonify(response_object), 500
+
+        @app.get('/group')
+        def get_group():
+            session = Session()
+            groups = database.get_groups(session)
+            response_object = {
+                'status': 'success',
+                'groups': [
+                    {'name': group.name, 'id': group.id} for group in groups
+                ]
+            }
+            return jsonify(response_object), 200
+
+        @app.post('/group')
+        @auth.login_required
+        def post_group():
+            session = Session()
+
+            # get the post data
+            post_data = request.get_json()
+            try:
+                new_group = Group(
+                    id=uuid(),
+                    name=post_data.get('name')
+                )
+                session.add(new_group)
+                session.commit()
+
+                response_object = {
+                    'status': 'success',
+                    'message': 'Successfully added new group.',
+                    'group_id': str(new_group.id)
+                }
+                return jsonify(response_object), 201
+
+            except Exception as e:
+                response_object = {
+                    'status': 'fail',
+                    'message': str(e)
                 }
                 return jsonify(response_object), 500
 
